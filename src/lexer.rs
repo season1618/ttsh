@@ -5,7 +5,7 @@ use Token::*;
 
 const SEP: [char; 7] = ['|', '&', ';', '<', '>', '(', ')'];
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum Token {
     DoubleVerticalLine,
     DoubleAmpersand,
