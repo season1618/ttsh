@@ -34,7 +34,7 @@ impl Parser {
     }
 
     pub fn parse(&mut self) -> Result<Command, String> {
-        self.parse_redirect()
+        self.parse_pipe()
         // self.parse_sequence()
     }
 
@@ -66,14 +66,14 @@ impl Parser {
     //     Pipe(lhs)
     // }
 
-    // fn parse_pipe(&mut self) -> Command {
-    //     let mut vec = vec![self.parse_redirect()];
-    //     while self.expect(VerticalLine) {
-    //         let cmd = self.parse_redirect();
-    //         vec.push(cmd);
-    //     }
-    //     return vec;
-    // }
+    fn parse_pipe(&mut self) -> Result<Command, String> {
+        let mut vec = vec![self.parse_redirect()?];
+        while self.expect(VerticalLine) {
+            let cmd = self.parse_redirect()?;
+            vec.push(cmd);
+        }
+        Ok(Pipe(vec))
+    }
 
     fn parse_redirect(&mut self) -> Result<Command, String> {
         let cmd = self.parse_primary()?;
