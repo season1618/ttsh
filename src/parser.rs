@@ -34,37 +34,36 @@ impl Parser {
     }
 
     pub fn parse(&mut self) -> Result<Command, String> {
-        self.parse_pipe()
-        // self.parse_sequence()
+        self.parse_sequence()
     }
 
-    // fn parse_sequence(&mut self) -> Command {
-    //     let lhs = self.parse_branch();
-    //     if self.expect(SemiColon) {
-    //         let rhs = self.parse_sequence();
-    //         return Sequence { lhs: Rc::new(lhs), rhs: Rc::new(rhs) };
-    //     } else {
-    //         return lhs;
-    //     }
-    // }
+    fn parse_sequence(&mut self) -> Result<Command, String> {
+        let lhs = self.parse_branch()?;
+        if self.expect(SemiColon) {
+            let rhs = self.parse_sequence()?;
+            return Ok(Sequence { lhs: Rc::new(lhs), rhs: Rc::new(rhs) });
+        } else {
+            return Ok(lhs);
+        }
+    }
 
-    // fn parse_branch(&mut self) -> Command {
-    //     let mut lhs = self.parse_pipe();
-    //     loop {
-    //         if self.expect(DoubleAmpersand) {
-    //             let rhs = self.parse_pipe();
-    //             lhs = BranchAnd { lhs: Rc::new(lhs), rhs: Rc::new(rhs) };
-    //             continue;
-    //         }
-    //         if self.expect(DoubleVerticalLine) {
-    //             let rhs = self.parse_pipe();
-    //             lhs = BranchOr { lhs: Rc::new(lhs), rhs: Rc::new(rhs) };
-    //             continue;
-    //         }
-    //         break;
-    //     }
-    //     Pipe(lhs)
-    // }
+    fn parse_branch(&mut self) -> Result<Command, String> {
+        let mut lhs = self.parse_pipe()?;
+        loop {
+            if self.expect(DoubleAmpersand) {
+                let rhs = self.parse_pipe()?;
+                lhs = BranchAnd { lhs: Rc::new(lhs), rhs: Rc::new(rhs) };
+                continue;
+            }
+            if self.expect(DoubleVerticalLine) {
+                let rhs = self.parse_pipe()?;
+                lhs = BranchOr { lhs: Rc::new(lhs), rhs: Rc::new(rhs) };
+                continue;
+            }
+            break;
+        }
+        Ok(lhs)
+    }
 
     fn parse_pipe(&mut self) -> Result<Command, String> {
         let mut vec = vec![self.parse_redirect()?];

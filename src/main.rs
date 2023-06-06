@@ -24,7 +24,7 @@ fn main() {
                 let mut parser = Parser::new(token_list);
                 match parser.parse() {
                     Ok(cmd) => { println!("{:?}", cmd); },
-                    Err(msg) => { println!("error: {}\n", msg); },
+                    Err(msg) => { println!("error: {}", msg); },
                 }
             }
             hist += 1;
