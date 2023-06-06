@@ -34,7 +34,7 @@ impl Parser {
     }
 
     pub fn parse(&mut self) -> Result<Command, String> {
-        self.parse_primary()
+        self.parse_redirect()
         // self.parse_sequence()
     }
 
@@ -75,27 +75,27 @@ impl Parser {
     //     return vec;
     // }
 
-    // fn parse_redirect(&mut self) -> Command {
-    //     let cmd = self.parse_primary();
-    //     let input: Option<String> = None;
-    //     let output: Option<(OutputFile, String)> = None;
-    //     loop {
-    //         if self.expect(Lt) {
-    //             input = Some(self.read_str()?);
-    //             continue;
-    //         }
-    //         if self.expect(Gt) {
-    //             output = Some((Output, self.read_str()?));
-    //             continue;
-    //         }
-    //         if self.expect(Gg) {
-    //             output = Some((Append, self.read_str()?));
-    //             continue;
-    //         }
-    //         break;
-    //     }
-    //     Redirect { cmd: Rc::new(cmd), input, output }
-    // }
+    fn parse_redirect(&mut self) -> Result<Command, String> {
+        let cmd = self.parse_primary()?;
+        let mut input: Option<String> = None;
+        let mut output: Option<(OutputFile, String)> = None;
+        loop {
+            if self.expect(Lt) {
+                input = Some(self.read_str()?);
+                continue;
+            }
+            if self.expect(Gt) {
+                output = Some((Output, self.read_str()?));
+                continue;
+            }
+            if self.expect(Gg) {
+                output = Some((Append, self.read_str()?));
+                continue;
+            }
+            break;
+        }
+        Ok(Redirect { cmd: Rc::new(cmd), input, output })
+    }
 
     fn parse_primary(&mut self) -> Result<Command, String> {
         // if self.expect(OpenParen) {
@@ -138,7 +138,7 @@ impl Parser {
     }
 
     fn read_str(&mut self) -> Result<String, String> {
-        if let Some(Str(name)) =  self.cur.next() {
+        if let Some(Str(name)) = self.cur.next() {
             return Ok(name);
         }
         Err(String::from("string is expected"))
