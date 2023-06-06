@@ -1,12 +1,12 @@
 use std::io;
 use std::io::{stdout, Write};
-// use std::str::Chars;
-// use std::process::Command;
 
 pub mod lexer;
 pub mod parser;
+pub mod invoke;
 use crate::lexer::tokenize;
 use crate::parser::Parser;
+use crate::invoke::invoke;
 
 fn main() {
     let mut hist = 0;
@@ -23,8 +23,8 @@ fn main() {
             if !token_list.is_empty() {
                 let mut parser = Parser::new(token_list);
                 match parser.parse() {
-                    Ok(cmd) => { println!("{:?}", cmd); },
-                    Err(msg) => { println!("error: {}", msg); },
+                    Ok(cmd) => { println!("{:?}", cmd); println!("{:?}", invoke(&cmd)); },
+                    Err(msg) => println!("error: {}", msg),
                 }
             }
             hist += 1;
