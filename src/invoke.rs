@@ -14,7 +14,10 @@ use WriteMode::*;
 
 pub fn invoke(cmd: &Command) -> Result<WaitStatus> {
     match cmd {
-        // Sequence { lhs, rhs }
+        Sequence { lhs, rhs } => {
+            invoke(&**lhs);
+            invoke(&**rhs)
+        },
         BranchAnd { lhs, rhs } => {
             let wait_status = invoke(&**lhs)?;
             if status(&wait_status) == Some(0) {
