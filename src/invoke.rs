@@ -1,14 +1,12 @@
 use std::process;
 use std::os::fd::RawFd;
 use std::os::unix::process::CommandExt;
-use nix::errno::Errno;
 use nix::Result;
+use nix::errno::Errno;
 use nix::fcntl::{OFlag, open};
-use nix::unistd::{ForkResult::*, Pid, fork, pipe, close, dup2};
+use nix::unistd::{ForkResult::*, Pid, close, dup2, fork, pipe};
 use nix::sys::wait::{WaitStatus, wait};
 use nix::sys::stat::Mode;
-// use crate::syscall::{Result, WaitStatus, Error, wait};
-// use crate::fork::Fork::fork;
 
 use crate::parser::{Command, WriteMode};
 use Command::*;
@@ -17,6 +15,22 @@ use WriteMode::*;
 pub fn invoke(cmd: &Command) -> Result<WaitStatus> {
     match cmd {
         // Sequence { lhs, rhs }
+        BranchAnd { lhs, rhs } => {
+            let wait_status = invoke(&**lhs)?;
+            if status(&wait_status) == Some(0) {
+                return invoke(&**rhs);
+            } else {
+                return Ok(wait_status);
+            }
+        },
+        BranchOr { lhs, rhs } => {
+            let wait_status = invoke(&**lhs)?;
+            if status(&wait_status) == Some(0) {
+                return Ok(wait_status);
+            } else {
+                return invoke(&**rhs);
+            }
+        },
         Pipe(vec) => {
             let n_proc = vec.len();
             let n_pipe = vec.len() - 1;
@@ -95,4 +109,11 @@ fn redirect_exec(cmd: &Command) -> Result<WaitStatus> {
         _ => {},
     }
     Err(Errno::EPERM) // tekitou
+}
+
+fn status(wait_status: &WaitStatus) -> Option<i32> {
+    if let WaitStatus::Exited(_, status) = wait_status {
+        return Some(*status);
+    }
+    None
 }
