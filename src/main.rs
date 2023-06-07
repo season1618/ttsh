@@ -17,13 +17,11 @@ fn main() {
 
         line = String::new();
         if let Ok(_) = io::stdin().read_line(&mut line) {
-            println!("{}", line);
             let token_list = tokenize(&line);
-            println!("{:?}", token_list);
             if !token_list.is_empty() {
                 let mut parser = Parser::new(token_list);
                 match parser.parse() {
-                    Ok(cmd) => { println!("{:?}", cmd); println!("{:?}", invoke(&cmd)); },
+                    Ok(cmd) => { println!("{:?}", cmd); invoke(&cmd); },
                     Err(msg) => println!("error: {}", msg),
                 }
             }
