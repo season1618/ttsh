@@ -97,17 +97,18 @@ impl Parser {
     }
 
     fn parse_primary(&mut self) -> Result<Command, String> {
-        // if self.expect(OpenParen) {
-        //     let cmd = self.parse_sequence();
-        //     self.consume(CloseParen);
-        // } else {
+        if self.expect(OpenParen) {
+            let subcmd = self.parse_sequence()?;
+            self.consume(CloseParen);
+            return Ok(Subshell(Rc::new(subcmd)));
+        } else {
             let name = self.read_str()?;
             let mut args: Vec<String> = Vec::new();
             while let Some(arg) = self.expect_str() {
                 args.push(arg);
             }
             return Ok(Simple { name, args });
-        // }
+        }
     }
 
     fn expect(&mut self, token: Token) -> bool {

@@ -4,9 +4,9 @@ use std::os::unix::process::CommandExt;
 use nix::Result;
 use nix::errno::Errno;
 use nix::fcntl::{OFlag, open};
-use nix::unistd::{ForkResult::*, Pid, close, dup2, fork, pipe};
-use nix::sys::wait::{WaitStatus, wait};
 use nix::sys::stat::Mode;
+use nix::sys::wait::{WaitStatus, wait};
+use nix::unistd::{ForkResult::*, Pid, close, dup2, fork, pipe};
 
 use crate::parser::{Command, WriteMode};
 use Command::*;
@@ -103,6 +103,10 @@ fn redirect_exec(cmd: &Command) -> Result<WaitStatus> {
                 close(fd_out)?;
             }
             match &**cmd2 {
+                Subshell(subcmd) => {
+                    let wait_status = invoke(&**subcmd)?;
+                    unsafe { process::exit(status(&wait_status).unwrap()) }
+                },
                 Simple { name, args } => {
                     process::Command::new(name).args(args).exec();
                 },
