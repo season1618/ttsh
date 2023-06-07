@@ -8,8 +8,6 @@ use nix::sys::wait::{WaitStatus, wait};
 // use crate::syscall::{Result, WaitStatus, Error, wait};
 // use crate::fork::Fork::fork;
 
-#[no_std]
-
 use crate::parser::{Command, OutputFile};
 use Command::*;
 use OutputFile::*;
@@ -22,7 +20,7 @@ pub fn invoke(cmd: &Command) -> Result<WaitStatus> {
             let n_pipe = vec.len() - 1;
             let mut fd: Vec<(RawFd, RawFd)> = Vec::new();
             let mut pid_last = Pid::from_raw(0); // unused value
-            for i in 0..n_pipe {
+            for _i in 0..n_pipe {
                 fd.push(pipe()?);
             }
             for i in 0..n_proc {
@@ -48,7 +46,7 @@ pub fn invoke(cmd: &Command) -> Result<WaitStatus> {
             }
 
             let mut status_last = WaitStatus::Exited(pid_last, 0); // unused value
-            for i in 0..n_proc {
+            for _i in 0..n_proc {
                 let wait_status = wait()?;
                 if let WaitStatus::Exited(pid, _) = wait_status {
                     if pid == pid_last {
@@ -60,17 +58,16 @@ pub fn invoke(cmd: &Command) -> Result<WaitStatus> {
             Ok(status_last)
         },
         Redirect { .. } => {
-            match unsafe { fork() } {
-                Ok(Child) => { redirect_exec(cmd); panic!(""); },
-                Ok(Parent { child: _pid }) => wait(),
-                Err(errno) => Err(errno),
+            match unsafe { fork()? } {
+                Child => redirect_exec(cmd),
+                Parent { child: _pid } => wait(),
             }
         },
         _ => { panic!(""); },
     }
 }
 
-fn redirect_exec(cmd: &Command) {
+fn redirect_exec(cmd: &Command) -> Result<WaitStatus> {
     match cmd {
         Redirect { cmd: cmd2, input, output } => {
             match &**cmd2 {
@@ -82,5 +79,5 @@ fn redirect_exec(cmd: &Command) {
         },
         _ => {},
     }
-    panic!("");
+    Err(Errno::EPERM) // tekitou
 }
