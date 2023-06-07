@@ -5,7 +5,7 @@ use std::iter::Peekable;
 use crate::lexer::Token;
 use Token::*;
 use Command::*;
-use OutputFile::*;
+use WriteMode::*;
 
 #[derive(Debug)]
 pub enum Command {
@@ -13,13 +13,13 @@ pub enum Command {
     BranchAnd { lhs: Rc<Command>, rhs: Rc<Command> },
     BranchOr { lhs: Rc<Command>, rhs: Rc<Command> },
     Pipe(Vec<Command>),
-    Redirect { cmd: Rc<Command>, input: Option<String>, output: Option<(OutputFile, String)> },
+    Redirect { cmd: Rc<Command>, input: Option<String>, output: Option<(WriteMode, String)> },
     Subshell(Rc<Command>),
     Simple { name: String, args: Vec<String> },
 }
 
 #[derive(Debug)]
-pub enum OutputFile {
+pub enum WriteMode {
     Output,
     Append,
 }
@@ -77,7 +77,7 @@ impl Parser {
     fn parse_redirect(&mut self) -> Result<Command, String> {
         let cmd = self.parse_primary()?;
         let mut input: Option<String> = None;
-        let mut output: Option<(OutputFile, String)> = None;
+        let mut output: Option<(WriteMode, String)> = None;
         loop {
             if self.expect(Lt) {
                 input = Some(self.read_str()?);

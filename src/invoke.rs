@@ -3,14 +3,16 @@ use std::os::fd::RawFd;
 use std::os::unix::process::CommandExt;
 use nix::errno::Errno;
 use nix::Result;
+use nix::fcntl::{OFlag, open};
 use nix::unistd::{ForkResult::*, Pid, fork, pipe, close, dup2};
 use nix::sys::wait::{WaitStatus, wait};
+use nix::sys::stat::Mode;
 // use crate::syscall::{Result, WaitStatus, Error, wait};
 // use crate::fork::Fork::fork;
 
-use crate::parser::{Command, OutputFile};
+use crate::parser::{Command, WriteMode};
 use Command::*;
-use OutputFile::*;
+use WriteMode::*;
 
 pub fn invoke(cmd: &Command) -> Result<WaitStatus> {
     match cmd {
@@ -70,6 +72,19 @@ pub fn invoke(cmd: &Command) -> Result<WaitStatus> {
 fn redirect_exec(cmd: &Command) -> Result<WaitStatus> {
     match cmd {
         Redirect { cmd: cmd2, input, output } => {
+            if let Some(name) = input {
+                let fd_in = open(&**name, OFlag::O_RDONLY, Mode::S_IRWXU)?;
+                dup2(fd_in, 0)?;
+                close(fd_in)?;
+            }
+            if let Some((write_mode, name)) = output {
+                let fd_out = match write_mode {
+                    Output => open(&**name, OFlag::O_WRONLY | OFlag::O_CREAT | OFlag::O_TRUNC, Mode::S_IRWXU)?,
+                    Append => open(&**name, OFlag::O_WRONLY | OFlag::O_CREAT | OFlag::O_APPEND, Mode::S_IRWXU)?,
+                };
+                dup2(fd_out, 1)?;
+                close(fd_out)?;
+            }
             match &**cmd2 {
                 Simple { name, args } => {
                     process::Command::new(name).args(args).exec();

@@ -21,7 +21,7 @@ fn main() {
             if !token_list.is_empty() {
                 let mut parser = Parser::new(token_list);
                 match parser.parse() {
-                    Ok(cmd) => { println!("{:?}", cmd); invoke(&cmd); },
+                    Ok(cmd) => { invoke(&cmd); },
                     Err(msg) => println!("error: {}", msg),
                 }
             }
